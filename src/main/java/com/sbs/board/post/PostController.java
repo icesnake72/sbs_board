@@ -1,5 +1,6 @@
 package com.sbs.board.post;
 
+import com.sbs.board.auth.LoginUserId;
 import com.sbs.board.global.IngestResult;
 import com.sbs.board.post.dto.PostRequest;
 import com.sbs.board.post.dto.PostDTO;
@@ -24,7 +25,7 @@ public class PostController {
             @PathVariable
             Long boardId,
 
-            @SessionAttribute(name = LOGIN_USER_ID, required = false)
+            @LoginUserId
             Long loginUserId,
 
             @Valid

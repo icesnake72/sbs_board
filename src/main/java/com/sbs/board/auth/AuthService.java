@@ -3,6 +3,7 @@ package com.sbs.board.auth;
 import com.sbs.board.auth.dto.LoginRequest;
 import com.sbs.board.auth.dto.SignupRequest;
 import com.sbs.board.auth.dto.UserResponse;
+import com.sbs.board.auth.jwt.JwtTokenProvider;
 import com.sbs.board.global.entity.User;
 import com.sbs.board.global.entity.UserProfile;
 import com.sbs.board.global.IngestResult;
@@ -11,10 +12,12 @@ import com.sbs.board.global.exception.NotFoundException;
 import com.sbs.board.global.exception.UnauthorizedException;
 import com.sbs.board.user.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.sbs.board.auth.jwt.JwtAuthenticationFilter.BEARER;
 import static com.sbs.board.global.exception.ErrorCode.*;
 
 @Service
@@ -23,6 +26,10 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @Value("${jwt.access-token-validity-seconds}")
+    private long accessTokenValiditySeconds;
 
     @Transactional
     public IngestResult signUp(SignupRequest request) {
@@ -67,10 +74,13 @@ public class AuthService {
             throw new UnauthorizedException(LOGIN_FAILED);
         }
 
+        String accessToken = jwtTokenProvider.createToken(user.getId());
+
         response.setId(user.getId());
         response.setEmail(user.getEmail());
         response.setNickName(user.getNickName());
         response.setRole(user.getRole().toString());
+        response.setAccessToken(BEARER+accessToken);
 
         return response;
     }

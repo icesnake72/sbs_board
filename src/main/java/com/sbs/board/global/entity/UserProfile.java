@@ -1,5 +1,6 @@
 package com.sbs.board.global.entity;
 
+import com.sbs.board.user.dto.UserProfileResponse;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -39,4 +40,17 @@ public class UserProfile {
     @LastModifiedDate
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    public static UserProfileResponse toDTO(UserProfile user) {
+        UserProfileResponse dto = new UserProfileResponse();
+        dto.setNickName(user.getUser().getNickName());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setBirth(user.getBirth() != null ? user.getBirth().toString():"");
+        dto.setCreatedAt(user.getCreatedAt().toString());
+
+        return dto;
+    }
 }
+
+// Refresh Token: 만료시간 5시간, Access Token 재발급 용도로만 사용
+// Access Token: 15분

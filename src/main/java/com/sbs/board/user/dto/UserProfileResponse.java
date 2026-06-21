@@ -1,4 +1,4 @@
-package com.sbs.board.auth.dto;
+package com.sbs.board.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,10 +9,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
-    private Long id;
-    private String email;
+public class UserProfileResponse {
     private String nickName;
-    private String accessToken;
-    private String role;    // debug용
+    private String phoneNumber;
+    private String birth;
+    private String createdAt;
 }
