@@ -45,6 +45,22 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
+    public static PostDTO toDTO(Post post, Long loginUserId) {
+        boolean owner = loginUserId != null && post.isAuthor(loginUserId);
+
+        PostDTO dto = new PostDTO();
+        dto.setId(post.getId());
+        dto.setTitle(post.getTitle());
+        dto.setAuthor(post.getAuthor().getNickName());
+        dto.setBoard(post.getBoard().getName());
+        dto.setBody(post.getBody());
+        dto.setCreatedAt(post.getCreatedAt().toString());
+        dto.setCanEdit(owner);
+        dto.setCanDelete(owner);
+
+        return dto;
+    }
+
     public static PostDTO toDTO(Post post) {
         PostDTO dto = new PostDTO();
         dto.setId(post.getId());
@@ -53,7 +69,13 @@ public class Post {
         dto.setBoard(post.getBoard().getName());
         dto.setBody(post.getBody());
         dto.setCreatedAt(post.getCreatedAt().toString());
+        dto.setCanEdit(false);
+        dto.setCanDelete(false);
 
         return dto;
+    }
+
+    public boolean isAuthor(Long userId) {
+        return author.getId().equals(userId);
     }
 }

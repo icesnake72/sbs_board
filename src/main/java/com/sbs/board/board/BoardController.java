@@ -21,13 +21,10 @@ public class BoardController {
 
     @PostMapping("/new")
     public BoardResponse create(
-            @SessionAttribute(name = LOGIN_USER_ID, required = false)
-            Long loginUserId,
-
             @Valid
             @RequestBody
             BoardRequest request) {
-        return boardService.create(loginUserId, request);
+        return boardService.create(request);
     }
 
     @GetMapping("/all")
@@ -38,23 +35,16 @@ public class BoardController {
     @PutMapping("/{id}/update")
     public BoardResponse update(
             @PathVariable Long id,
-
-            @SessionAttribute(name = LOGIN_USER_ID, required = false)
-            Long loginUserId,
-
             @RequestBody BoardRequest request) {
 
-        return boardService.update(loginUserId, id, request);
+        return boardService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(
-            @PathVariable Long id,
-
-            @SessionAttribute(name = LOGIN_USER_ID, required = false)
-            Long loginUserId
+            @PathVariable Long id
     ) {
-        String result = boardService.delete(loginUserId, id);
+        String result = boardService.delete(id);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 }

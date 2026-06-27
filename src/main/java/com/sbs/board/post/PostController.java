@@ -1,5 +1,6 @@
 package com.sbs.board.post;
 
+import com.sbs.board.auth.CustomUserDetails;
 import com.sbs.board.auth.LoginUserId;
 import com.sbs.board.global.IngestResult;
 import com.sbs.board.post.dto.PostRequest;
@@ -8,6 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,13 +28,13 @@ public class PostController {
             @PathVariable
             Long boardId,
 
-            @LoginUserId
-            Long loginUserId,
+            @AuthenticationPrincipal
+            CustomUserDetails userDetails,
 
             @Valid
             @RequestBody
             PostRequest request) {
-        return postService.create(boardId, loginUserId, request);
+        return postService.create(boardId, userDetails.getId(), request);
     }
 
     // 모든 사용자 가능
@@ -40,11 +43,19 @@ public class PostController {
         return postService.list();
     }
 
+    // Board Id를 받아서 해당 Board의 모든 게시글을 반환하는 기능
+    @GetMapping("/{boardId}/all")
+    public List<PostDTO> findByBoard(@PathVariable Long boardId) {
+        return postService.findByBoardId(boardId);
+    }
+
     // id로 PostDTO 한개 반환하기, 모든 사용자 가능
     @GetMapping("/{id}")
-    public PostDTO getPost(@PathVariable Long id) {
-        System.out.println(id);
-        return postService.getPost(id);
+    public PostDTO getPost(@PathVariable Long id,
+                           @AuthenticationPrincipal
+                           CustomUserDetails userDetails) {
+
+        return postService.getPost(userDetails.getId(), id);
     }
 
     // update, 작성자만 가능
@@ -52,14 +63,14 @@ public class PostController {
     public PostDTO update(
         @PathVariable Long id,
 
-        @SessionAttribute(name = LOGIN_USER_ID, required = false)
-        Long loginUserId,
+        @AuthenticationPrincipal
+        CustomUserDetails userDetails,
 
         @Valid
         @RequestBody
         PostRequest request
     ) {
-        return postService.update(loginUserId, id, request);
+        return postService.update(userDetails.getId(), id, request);
     }
 
     // delete, 작성자만 가능
@@ -67,10 +78,10 @@ public class PostController {
     public ResponseEntity<String> delete(
             @PathVariable Long id,
 
-            @SessionAttribute(name = LOGIN_USER_ID, required = false)
-            Long loginUserId
+            @AuthenticationPrincipal
+            CustomUserDetails userDetails
     ) {
-        postService.delete(loginUserId, id);
+        postService.delete(userDetails.getId(), id);
 
         return ResponseEntity.status(HttpStatus.OK).body("ok");
     }

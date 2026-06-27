@@ -32,8 +32,8 @@ public class BoardService {
 
     // Create
     @Transactional
-    public BoardResponse create(Long loginUserId, BoardRequest request) {
-        validateUser(loginUserId);
+    public BoardResponse create(BoardRequest request) {
+        // validateUser(loginUserId);
 
         if (boardRepository.existsByName(request.getName())) {
             // return conflict error
@@ -64,8 +64,8 @@ public class BoardService {
 
     // Update
     @Transactional
-    public BoardResponse update(Long loginUserId, Long boardId, BoardRequest request) {
-        validateUser(loginUserId);
+    public BoardResponse update(Long boardId, BoardRequest request) {
+        // validateUser(loginUserId);
 
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(()->new NotFoundException(ErrorCode.BOARD_NOT_FOUND));
@@ -78,8 +78,8 @@ public class BoardService {
     }
 
     @Transactional
-    public String delete(Long loginUserId, Long boardId) {
-        validateUser(loginUserId);
+    public String delete(Long boardId) {
+        // validateUser(loginUserId);
 
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(()->new NotFoundException(ErrorCode.BOARD_NOT_FOUND));

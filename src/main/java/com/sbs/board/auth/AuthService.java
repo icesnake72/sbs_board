@@ -8,11 +8,17 @@ import com.sbs.board.global.entity.User;
 import com.sbs.board.global.entity.UserProfile;
 import com.sbs.board.global.IngestResult;
 import com.sbs.board.global.exception.DuplicateException;
+import com.sbs.board.global.exception.ErrorCode;
 import com.sbs.board.global.exception.NotFoundException;
 import com.sbs.board.global.exception.UnauthorizedException;
 import com.sbs.board.user.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +33,7 @@ public class AuthService {
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
 
     @Value("${jwt.access-token-validity-seconds}")
     private long accessTokenValiditySeconds;
@@ -64,23 +71,33 @@ public class AuthService {
     public UserResponse login(LoginRequest request) {
         UserResponse response = new UserResponse();
 
-        // request로부터 주어진 email로 데이터베이스에서 쿼리하여 User Entity를 가져온다.
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(()-> new NotFoundException(USER_NOT_FOUND));
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            String accessToken = jwtTokenProvider.createToken(userDetails.getUsername());
 
-        // 패스워드 매칭
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            // 비밀번호가 일치하지 않음
-            throw new UnauthorizedException(LOGIN_FAILED);
+            response.setId(userDetails.getId());
+            response.setEmail(userDetails.getUsername());
+            response.setNickName(userDetails.getNickName());
+//            response.setRole(userDetails.getAuthorities());
+            response.setAccessToken(BEARER+accessToken);
+
+        } catch (AuthenticationException ex) {
+            throw new UnauthorizedException(LOGIN_REQUIRED);
         }
 
-        String accessToken = jwtTokenProvider.createToken(user.getId());
+//        // request로부터 주어진 email로 데이터베이스에서 쿼리하여 User Entity를 가져온다.
+//        User user = userRepository.findByEmail(request.getEmail())
+//                .orElseThrow(()-> new NotFoundException(USER_NOT_FOUND));
+//
+//        // 패스워드 매칭
+//        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+//            // 비밀번호가 일치하지 않음
+//            throw new UnauthorizedException(LOGIN_FAILED);
+//        }
 
-        response.setId(user.getId());
-        response.setEmail(user.getEmail());
-        response.setNickName(user.getNickName());
-        response.setRole(user.getRole().toString());
-        response.setAccessToken(BEARER+accessToken);
+//        String accessToken = jwtTokenProvider.createToken(user.getEmail());
 
         return response;
     }

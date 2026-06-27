@@ -23,7 +23,7 @@ spring:
 
 jwt:
   secret: c2VjcmV0X2tleV9ieV9zYnNfYWNhZGVteV8yMDI2MDcyMV9ib2FyZF9iYWNrX2VuZF9hcHA=
-  access-token-validity-seconds: 120 # 1M
+  access-token-validity-seconds: 3600 # 1M
 
 logging:
   level:

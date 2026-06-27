@@ -29,11 +29,11 @@ public class JwtTokenProvider {
     }
 
     // userId를 subject에 담고 만료시간을 정해 서명된 토큰 문자열을 생성한다
-    public String createToken(Long userId) {
+    public String createToken(String userEmail) {
         Date now = new Date();  // issued at(발급시간)
         Date expiration = new Date(now.getTime() + accessTokenValiditySeconds * 1000); // 만료시간
         return Jwts.builder()
-                .subject(String.valueOf(userId))
+                .subject(userEmail)
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(key)
@@ -41,7 +41,7 @@ public class JwtTokenProvider {
     }
 
     // 서명된 토큰 문자열을 받아 userId를 반환한다.
-    public Long getUserId(String token) {
+    public String getUserEmail(String token) {
         String subject = Jwts.parser()
                 .verifyWith(key)
                 .build()
@@ -51,7 +51,7 @@ public class JwtTokenProvider {
 
         log.debug("토큰으로부터 사용자 ID 추출: {}", subject);
 
-        return Long.valueOf(subject);
+        return subject;
     }
 
     // 서명된 토큰을 검증한다

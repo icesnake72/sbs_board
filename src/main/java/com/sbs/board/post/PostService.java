@@ -5,7 +5,6 @@ import com.sbs.board.board.BoardRepository;
 import com.sbs.board.global.entity.Board;
 import com.sbs.board.global.entity.Post;
 import com.sbs.board.global.entity.User;
-import com.sbs.board.global.IngestResult;
 import com.sbs.board.global.exception.ErrorCode;
 import com.sbs.board.global.exception.ForbiddenException;
 import com.sbs.board.global.exception.NotFoundException;
@@ -64,17 +63,30 @@ public class PostService {
                 Post::toDTO).toList();
     }
 
-    public PostDTO getPost(Long id) {
+    @Transactional(readOnly = true)
+    public List<PostDTO> findByBoardId(Long boardId) {
+//        Board board = boardRepository.findById(boardId)
+//                .orElseThrow(()-> new NotFoundException(ErrorCode.BOARD_NOT_FOUND));
+
+        return postRepository.findByBoardId(boardId).stream()
+                .map(Post::toDTO).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PostDTO getPost(Long loginUserId, Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() ->new NotFoundException(ErrorCode.POST_NOT_FOUND));
 
-        return Post.toDTO(post);
+        return Post.toDTO(post, loginUserId);
     }
 
+    @Transactional
     public PostDTO update(Long loginUserId, Long postId, @Valid PostRequest request) {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(()->new NotFoundException(ErrorCode.POST_NOT_FOUND));
+
+        validateAuthor(post, loginUserId);
 
         // 게시글 수정권한이 없다면 에러를 발생시킴
         User user = post.getAuthor();
@@ -90,9 +102,12 @@ public class PostService {
         return Post.toDTO( savedPost );
     }
 
+    @Transactional
     public void delete(Long loginUserId, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(()->new NotFoundException(ErrorCode.POST_NOT_FOUND));
+
+        validateAuthor(post, loginUserId);
 
         // 게시글 수정권한이 없다면 에러를 발생시킴
         User user = post.getAuthor();
@@ -101,6 +116,12 @@ public class PostService {
         }
 
         postRepository.delete( post );
+    }
+
+    private void validateAuthor(Post post, Long userId) {
+        if (!post.isAuthor(userId)) {
+            throw new ForbiddenException(ErrorCode.POST_ACCESS_DENIED);
+        }
     }
 
 //    public PostDTO findById(Long id) {
