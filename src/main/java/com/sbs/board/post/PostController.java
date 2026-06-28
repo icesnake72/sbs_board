@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -59,29 +60,25 @@ public class PostController {
     }
 
     // update, 작성자만 가능
+    @PreAuthorize("@postSecurity.isAuthor(#id, authentication.principal)")
     @PutMapping("/{id}/update")
     public PostDTO update(
         @PathVariable Long id,
-
-        @AuthenticationPrincipal
-        CustomUserDetails userDetails,
 
         @Valid
         @RequestBody
         PostRequest request
     ) {
-        return postService.update(userDetails.getId(), id, request);
+        return postService.update(id, request);
     }
 
     // delete, 작성자만 가능
+    @PreAuthorize("@postSecurity.isAuthor(#id, authentication.principal)")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> delete(
-            @PathVariable Long id,
-
-            @AuthenticationPrincipal
-            CustomUserDetails userDetails
+            @PathVariable Long id
     ) {
-        postService.delete(userDetails.getId(), id);
+        postService.delete(id);
 
         return ResponseEntity.status(HttpStatus.OK).body("ok");
     }

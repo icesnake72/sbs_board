@@ -81,18 +81,18 @@ public class PostService {
     }
 
     @Transactional
-    public PostDTO update(Long loginUserId, Long postId, @Valid PostRequest request) {
+    public PostDTO update(Long postId, @Valid PostRequest request) {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(()->new NotFoundException(ErrorCode.POST_NOT_FOUND));
 
-        validateAuthor(post, loginUserId);
-
-        // 게시글 수정권한이 없다면 에러를 발생시킴
-        User user = post.getAuthor();
-        if (!Objects.equals(user.getId(), loginUserId)) {
-            throw new ForbiddenException(ErrorCode.POST_ACCESS_DENIED);
-        }
+//        validateAuthor(post, loginUserId);
+//
+//        // 게시글 수정권한이 없다면 에러를 발생시킴
+//        User user = post.getAuthor();
+//        if (!Objects.equals(user.getId(), loginUserId)) {
+//            throw new ForbiddenException(ErrorCode.POST_ACCESS_DENIED);
+//        }
 
         post.setTitle(request.getTitle());
         post.setBody(request.getBody());
@@ -103,17 +103,17 @@ public class PostService {
     }
 
     @Transactional
-    public void delete(Long loginUserId, Long postId) {
+    public void delete(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(()->new NotFoundException(ErrorCode.POST_NOT_FOUND));
 
-        validateAuthor(post, loginUserId);
-
-        // 게시글 수정권한이 없다면 에러를 발생시킴
-        User user = post.getAuthor();
-        if (!Objects.equals(user.getId(), loginUserId)) {
-            throw new ForbiddenException(ErrorCode.POST_ACCESS_DENIED);
-        }
+//        validateAuthor(post, loginUserId);
+//
+//        // 게시글 수정권한이 없다면 에러를 발생시킴
+//        User user = post.getAuthor();
+//        if (!Objects.equals(user.getId(), loginUserId)) {
+//            throw new ForbiddenException(ErrorCode.POST_ACCESS_DENIED);
+//        }
 
         postRepository.delete( post );
     }

@@ -9,11 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
-    private Long id;
-    private String email;
-    private String nickName;
+public class TokenResponse {
     private String accessToken;
-    private String refreshToken;    // production 에서는 제거
-    private String role;    // debug용
+    private String refreshToken;
 }

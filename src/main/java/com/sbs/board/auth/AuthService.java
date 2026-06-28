@@ -2,8 +2,10 @@ package com.sbs.board.auth;
 
 import com.sbs.board.auth.dto.LoginRequest;
 import com.sbs.board.auth.dto.SignupRequest;
+import com.sbs.board.auth.dto.TokenResponse;
 import com.sbs.board.auth.dto.UserResponse;
 import com.sbs.board.auth.jwt.JwtTokenProvider;
+import com.sbs.board.global.entity.RefreshToken;
 import com.sbs.board.global.entity.User;
 import com.sbs.board.global.entity.UserProfile;
 import com.sbs.board.global.IngestResult;
@@ -23,6 +25,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import static com.sbs.board.auth.jwt.JwtAuthenticationFilter.BEARER;
 import static com.sbs.board.global.exception.ErrorCode.*;
 
@@ -34,9 +39,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${jwt.access-token-validity-seconds}")
     private long accessTokenValiditySeconds;
+
+    @Value("${jwt.refresh-token-validity-seconds}")
+    private long refreshTokenValiditySeconds;
 
     @Transactional
     public IngestResult signUp(SignupRequest request) {
@@ -76,12 +85,14 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             String accessToken = jwtTokenProvider.createToken(userDetails.getUsername());
+            String refreshToken = issueRefreshToken(userDetails.getId());
 
             response.setId(userDetails.getId());
             response.setEmail(userDetails.getUsername());
             response.setNickName(userDetails.getNickName());
 //            response.setRole(userDetails.getAuthorities());
             response.setAccessToken(BEARER+accessToken);
+            response.setRefreshToken(refreshToken);
 
         } catch (AuthenticationException ex) {
             throw new UnauthorizedException(LOGIN_REQUIRED);
@@ -102,7 +113,43 @@ public class AuthService {
         return response;
     }
 
-    public boolean logout() {
-        return true;
+    public void logout(String refreshToken) {
+        refreshTokenRepository.findByToken(refreshToken)
+            .ifPresent(refreshTokenRepository::delete);
+    }
+
+    @Transactional
+    public String issueRefreshToken(Long userId) {
+        String token = UUID.randomUUID().toString();
+
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
+        refreshTokenRepository.findByUserId(userId)
+            .ifPresentOrElse(
+                exist -> exist.update(token, expiresAt),
+                ()-> refreshTokenRepository.save(new RefreshToken(userId, token, expiresAt)));
+
+        return token;
+    }
+
+    @Transactional
+    public TokenResponse reissueToken(String refreshToken) {
+        RefreshToken saved = refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(()->new UnauthorizedException(LOGIN_REQUIRED));
+
+        if (saved.isExpired()) {
+            refreshTokenRepository.deleteByToken(refreshToken);
+            throw new UnauthorizedException(LOGIN_REQUIRED);
+        }
+
+        User user = userRepository.findById(saved.getUserId())
+            .orElseThrow(()-> new UnauthorizedException(LOGIN_REQUIRED));
+
+        String newAccessToken = jwtTokenProvider.createToken(user.getEmail());
+
+        TokenResponse response = new TokenResponse();
+        response.setAccessToken(newAccessToken);
+        response.setRefreshToken(refreshToken);
+
+        return response;
     }
 }

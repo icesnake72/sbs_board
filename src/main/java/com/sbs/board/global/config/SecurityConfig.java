@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -18,9 +19,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+// @EnableMethodSecurity: @PreAuthorize / @PostAuthorize가 활성화됨
+
+
 @Slf4j
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -58,9 +63,9 @@ public class SecurityConfig {
                     // 인증이되어야 요청가능
                     .requestMatchers(HttpMethod.GET, "/api/user/me").authenticated()
                     // ADMIN권한이 있어야 요청가능
-                    .requestMatchers(HttpMethod.POST, "/api/board/*").hasRole(User.Role.ADMIN.name())
-                    .requestMatchers(HttpMethod.PUT, "/api/board/**").hasRole(User.Role.ADMIN.name())
-                    .requestMatchers(HttpMethod.DELETE, "/api/board/**").hasRole(User.Role.ADMIN.name())
+//                    .requestMatchers(HttpMethod.POST, "/api/board/*").hasRole(User.Role.ADMIN.name())
+//                    .requestMatchers(HttpMethod.PUT, "/api/board/**").hasRole(User.Role.ADMIN.name())
+//                    .requestMatchers(HttpMethod.DELETE, "/api/board/**").hasRole(User.Role.ADMIN.name())
                     .anyRequest().authenticated()
             )
             // 401(Unauthorized), 403(Forbidden)
