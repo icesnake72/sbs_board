@@ -23,6 +23,7 @@ public enum ErrorCode {
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "로그인에 실패하였습니다."),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다."),
     INVALID_BOARD_ID(HttpStatus.BAD_REQUEST, "해당 Board ID는 삭제할 수 없습니다."),
+    INVALID_OAUTH_STATE(HttpStatus.UNAUTHORIZED, "정상적인 인증 요청이 아닙니다."),
 
     SQL_INTEGRITY_ERROR(HttpStatus.BAD_REQUEST, "데이터베이스 참조 무결성 위배 에러입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "알 수 없는 내부 에러가 발생했습니다.");

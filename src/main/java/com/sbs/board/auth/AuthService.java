@@ -132,6 +132,23 @@ public class AuthService {
     }
 
     @Transactional
+    public TokenPair issueRefreshTokenPair(Long userId) {
+        String token = UUID.randomUUID().toString();
+
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
+        refreshTokenRepository.findByUserId(userId)
+                .ifPresentOrElse(
+                        exist -> exist.update(token, expiresAt),
+                        ()-> refreshTokenRepository.save(new RefreshToken(userId, token, expiresAt)));
+
+        TokenPair tokenPair = new TokenPair();
+        tokenPair.setToken(token);
+        tokenPair.setExpireIn(refreshTokenValiditySeconds);
+
+        return tokenPair;
+    }
+
+    @Transactional
     public TokenResponse reissueToken(String refreshToken) {
         RefreshToken saved = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(()->new UnauthorizedException(LOGIN_REQUIRED));

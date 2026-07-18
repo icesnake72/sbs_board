@@ -5,6 +5,37 @@ spring:
   application:
     name: board
 
+  config:
+    import: optional:file:.env[.properties]
+
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_REST_API}
+            client-secret: ${KAKAO_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            scope: profile_nickname
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid,profile,email # open id connection
+
+
+
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+
+
   datasource:
     url: jdbc:mysql://localhost:3306/board?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
@@ -32,6 +63,15 @@ app:
     secure: false
     same-site: Strict
     path: /api/auth
+
+  oauth:
+    kakao:
+      appkey: ${KAKAO_REST_API}  # kakao rest api key
+      secret: ${KAKAO_SECRET}  # kakao client secret key
+      callback: ${KAKAO_CALLBACK}
+      authorize-uri: https://kauth.kakao.com/oauth/authorize  # 동의 및 로그인 화면
+      token-uri: https://kauth.kakao.com/oauth/token  # access token
+      user-info: https://kapi.kakao.com/v2/user/me    # user info
 
 logging:
   level:

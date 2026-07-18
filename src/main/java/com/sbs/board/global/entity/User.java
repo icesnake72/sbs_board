@@ -29,6 +29,15 @@ public class User {
     @Column(name = "nick_name", length = 100, nullable = false)
     private String nickName;
 
+    @Column(name = "provider", length = 100)
+    private String provider;
+
+    @Column(name = "provider_id", length = 100)
+    private String providerId;
+
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     @Builder.Default
