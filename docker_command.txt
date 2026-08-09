@@ -1,0 +1,32 @@
+-- run: nginx란 이름의 이미지로 컨테이너로 실행함
+-d : 백그라운드 실행
+-p : 포트 포워딩, host port:container port 
+--name: 컨테이너 이름
+docker run -d -p 80:80 --name my-web-server nginx
+
+
+cd /usr/share/nginx/html
+
+# 도커 파일 실행(컨테이너화)
+-d: 백그라운드 실행
+-p: 포트 포워딩
+-name: 컨테이너 이름
+제일 뒤에 이미지 이름
+docker run -d -p 8090:8090 --name board-back-end board
+
+# 컨테이너 중지
+docker stop board-back-end
+
+# 컨테이너 삭제: board-back-end는 컨테이너 이름
+docker rm board-back-end
+
+# 컨테이너 목록 보기
+docker ps 
+docker ps -a # 중지된 컨테이너 목록도 보여줌
+
+# 실행중인 컨테이너의 로그 보기
+# -f: 로그 추적(실시간), ctrl + c 누르면 빠져나옴
+docker logs -f board-back-end
+
+
+

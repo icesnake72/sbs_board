@@ -1,5 +1,10 @@
 server:
+  # 컨테이너 내부 포트. 리버스 프록시(nginx:80) 뒤에 있으며 외부에 노출하지 않는다.
   port: 8090
+
+  # 프록시가 넘긴 X-Forwarded-* 를 Spring 이 신뢰하도록 한다.
+  # 이게 없으면 request.getScheme() 이 항상 http 라, HTTPS 종단 뒤에서 링크/리다이렉트가 http 로 새어나간다.
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -13,19 +18,29 @@ spring:
     oauth2:
       client:
         registration:
+          # redirect-uri 에 {baseUrl} 을 쓰면 안 된다.
+          # {baseUrl} 은 "백엔드에 들어온 요청"에서 계산되는데, 리버스 프록시를 거치면
+          # nginx $host / vite changeOrigin 에 따라 http://localhost, http://localhost:8090 등으로
+          # 값이 흔들려 redirect_uri_mismatch 가 난다.
+          #
+          # 8090 은 컨테이너 내부 포트일 뿐 외부에 노출되지 않으므로(AWS), 브라우저가 실제로 보는
+          # 공개 오리진(nginx)으로 고정한다. 콜백은 nginx 의 /login/oauth2 프록시를 타고 들어온다.
+          #   docker  : http://localhost      (frontend2/react 가 80 포트)  → .env 의 APP_PUBLIC_BASE_URL
+          #   vite dev: http://localhost:3000 (아래 기본값)
+          #   AWS     : APP_PUBLIC_BASE_URL 로 주입 (예: https://board.example.com)
+          # 여기에 넣은 문자열을 그대로 Google / Kakao 콘솔에 등록해야 한다.
           kakao:
             client-id: ${KAKAO_REST_API}
             client-secret: ${KAKAO_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            redirect-uri: ${APP_PUBLIC_BASE_URL:http://localhost:3000}/login/oauth2/code/kakao
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             scope: profile_nickname
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: ${APP_PUBLIC_BASE_URL:http://localhost:3000}/login/oauth2/code/google
             scope: openid,profile,email # open id connection
-
-
 
         provider:
           kakao:
@@ -37,9 +52,9 @@ spring:
 
 
   datasource:
-    url: jdbc:mysql://localhost:3306/board?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root
-    password: 1234
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:board}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -52,8 +67,14 @@ spring:
         show_sql: true
         format_sql: true
 
+  servlet:
+    multipart:
+      max-file-size: 2MB      # 파일당 크기
+      max-request-size: 20MB  # request당 크기
+
+
 jwt:
-  secret: c2VjcmV0X2tleV9ieV9zYnNfYWNhZGVteV8yMDI2MDcyMV9ib2FyZF9iYWNrX2VuZF9hcHA=
+  secret: ${JWT_SECRET:c2VjcmV0X2tleV9ieV9zYnNfYWNhZGVteV8yMDI2MDcyMV9ib2FyZF9iYWNrX2VuZF9hcHA=}
   access-token-validity-seconds: 3600 # 1Hour
   refresh-token-validity-seconds: 36000 # 10Hour
 
@@ -64,7 +85,13 @@ app:
     same-site: Strict
     path: /api/auth
 
+  upload:
+    dir: ${APP_UPLOAD_DIR:./uploads}
+
   oauth:
+    # 소셜 로그인 성공/실패 후의 리다이렉트는 상대 경로(/oauth/callback, /login)를 쓴다.
+    # 프론트와 백엔드가 리버스 프록시 뒤에서 같은 오리진이므로 별도 설정이 필요 없다.
+
     kakao:
       appkey: ${KAKAO_REST_API}  # kakao rest api key
       secret: ${KAKAO_SECRET}  # kakao client secret key

@@ -38,3 +38,6 @@ out/
 
 # configuration
 .env
+
+/.ssh/
+*.pem

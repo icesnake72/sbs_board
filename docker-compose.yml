@@ -1,0 +1,98 @@
+name: board
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: board:latest
+    container_name: board-back-end
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql8
+      DB_PORT: "3306"
+      DB_NAME: ${DB_NAME:-board}
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-1234}
+      APP_UPLOAD_DIR: ${APP_UPLOAD_DIR:-/app/uploads}
+      # 브라우저가 실제로 보는 공개 오리진(리버스 프록시). OAuth redirect-uri 가 이 값으로 조립된다.
+      # AWS 배포 시 .env 에 실제 도메인을 넣는다. 예) APP_PUBLIC_BASE_URL=https://board.example.com
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-http://localhost}
+      TZ: Asia/Seoul
+    # 로컬 디버깅(Postman 등) 편의를 위한 매핑일 뿐이다.
+    # AWS 에서는 이 줄을 지운다 — 프론트는 board-net 내부에서 board-back-end:8090 으로만 접근한다.
+    ports:
+      - "8090:8090"
+    volumes:
+      - uploads:/app/uploads
+    networks:
+      - board-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8090/api/board/all"]
+      interval: 60s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend_vanilla
+      dockerfile: Dockerfile
+    image: board-fe
+    container_name: board-fe
+    # board-fe 가동 조건
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    networks:
+      - board-net
+    healthcheck:
+      test: ["CMD", "ping", "127.0.0.1"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  frontend2:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: board-fe-react
+    container_name: board-fe-react
+    # board-fe 가동 조건
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    networks:
+      - board-net
+    healthcheck:
+      test: [ "CMD", "ping", "127.0.0.1" ]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+
+networks:
+  board-net:
+    external: true
+
+volumes:
+  uploads:
+
+# docker compose down : docker compose.yml에 있는 컨테이너들을 모두 종료.삭제
+# docker compose up -d --build : docker image 생성 후 실행시킴
+
+# fe 코드 작성
+# nginx.conf 파일 설정
+# Dockerfile 작성
+# docker-compose.yml 작성
+# docker compose up 실행
