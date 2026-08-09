@@ -1,0 +1,37 @@
+name: Deploy to Lightsail Board Server
+on:
+  # push:
+    # branches: ["main"]
+  workflow_dispatch:  # 재배포를 위한 수동 트리거 버튼 추가
+
+# 병렬처리 여부
+concurrency:
+  group: deploy-lightsail
+  cancel-in-progress: true  # 다른 작업이 들어오면 이 작업을 취소함
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 21 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x ./gradlew
+
+      - name: 빌드
+        run: ./gradlew --no-daemon bootJar -x test
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lightsail SSH 접속후 배포
+        uses: appleboy/ssh-action@v1.2.0
