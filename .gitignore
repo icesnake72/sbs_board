@@ -37,7 +37,9 @@ out/
 .vscode/
 
 # configuration
+*.env
 .env
+.env.example
 
 /.ssh/
 *.pem
