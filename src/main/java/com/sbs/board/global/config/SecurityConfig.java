@@ -66,6 +66,7 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth-> auth
                     // 공개: 인증/회워가입/로그아웃/게시판의 게시글 조회
+                    .requestMatchers("/login/oauth2/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/oauth/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/board/**").permitAll()

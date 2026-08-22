@@ -35,3 +35,7 @@ jobs:
     steps:
       - name: Lightsail SSH 접속후 배포
         uses: appleboy/ssh-action@v1.2.0
+
+      - name: run script
+        run: |
+          sudo deploy.sh
