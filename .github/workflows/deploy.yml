@@ -49,7 +49,7 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           command_timeout: 30m
           envs: KAKAO_REST_API, KAKAO_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, DB_NAME, DB_USERNAME, DB_PASSWORD
-          script:
+          script: |
             set -e  # error output 설정 -> error log를 볼 수 있음
             [ -d ~/board/.git ] || git clone https://github.com/icesnake72/boards.git ~/board
             cd ~/board
