@@ -13,8 +13,8 @@ services:
       DB_HOST: ${DB_HOST:-mysql-8}
       DB_PORT: "3306"
       DB_NAME: ${DB_NAME:-board}
-      DB_USERNAME: ${DB_USERNAME:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-1234}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
       APP_UPLOAD_DIR: ${APP_UPLOAD_DIR:-/app/uploads}
       # 브라우저가 실제로 보는 공개 오리진(리버스 프록시). OAuth redirect-uri 가 이 값으로 조립된다.
       # AWS 배포 시 .env 에 실제 도메인을 넣는다. 예) APP_PUBLIC_BASE_URL=https://board.example.com
@@ -38,28 +38,6 @@ services:
 
   frontend:
     build:
-      context: ./frontend_vanilla
-      dockerfile: Dockerfile
-    image: board-fe
-    container_name: board-fe
-    # board-fe 가동 조건
-    depends_on:
-      app:
-        condition: service_healthy
-    ports:
-      - "3000:80"
-    networks:
-      - board-db-net
-    healthcheck:
-      test: ["CMD", "ping", "127.0.0.1"]
-      interval: 60s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    restart: unless-stopped
-
-  frontend2:
-    build:
       context: ./frontend
       dockerfile: Dockerfile
     image: board-fe-react
@@ -79,7 +57,6 @@ services:
       retries: 5
       start_period: 20s
     restart: unless-stopped
-
 
 networks:
   board-db-net:
