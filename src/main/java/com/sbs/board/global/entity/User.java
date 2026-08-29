@@ -7,7 +7,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
-@Table(name = "users")
+@Table(name = "users",
+    uniqueConstraints = {
+    @UniqueConstraint(
+            name = "uk_email_provider",
+            columnNames = {"email", "provider_id"}
+        )
+    }
+)
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Getter
