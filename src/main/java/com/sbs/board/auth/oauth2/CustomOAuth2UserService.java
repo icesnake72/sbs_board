@@ -93,7 +93,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         switch ( authProvider ) {
             case KAKAO -> {
                 email = kakaoEmail(attributes);
-                verifySocialEmail(email);
+                verifySocialEmail(email, providerId);
 
                 newUser.setEmail(email);
                 newUser.setNickName(kakaoNickName(attributes));
@@ -101,7 +101,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
             case GOOGLE -> {
                 email = (String) attributes.get("email");
-                verifySocialEmail(email);
+                verifySocialEmail(email, providerId);
 
                 newUser.setEmail(email);
                 newUser.setNickName((String) attributes.get("name"));

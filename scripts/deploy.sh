@@ -46,5 +46,5 @@ docker compose up -d --no-build --wait
 docker logout ghcr.io
 
 echo "이전 이미지 정리 및 최종 상태보고"
-dokcer image prune -f
+docker image prune -f
 docker compose ps

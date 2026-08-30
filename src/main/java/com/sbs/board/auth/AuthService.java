@@ -15,6 +15,7 @@ import com.sbs.board.global.exception.NotFoundException;
 import com.sbs.board.global.exception.UnauthorizedException;
 import com.sbs.board.user.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,6 +32,7 @@ import java.util.UUID;
 import static com.sbs.board.auth.jwt.JwtAuthenticationFilter.BEARER;
 import static com.sbs.board.global.exception.ErrorCode.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -39,7 +41,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RedisRefreshTokenStore refreshTokenStore;
+    private final RedisTokenDenylist tokenDenylist;
+
 
     @Value("${jwt.access-token-validity-seconds}")
     private long accessTokenValiditySeconds;
@@ -113,20 +117,32 @@ public class AuthService {
         return response;
     }
 
-    public void logout(String refreshToken) {
-        refreshTokenRepository.findByToken(refreshToken)
-            .ifPresent(refreshTokenRepository::delete);
+    public void logout(String refreshToken, String accessToken) {
+        refreshTokenStore.deleteByToken(refreshToken);
+
+        if (accessToken!=null & jwtTokenProvider.validateToken(accessToken)) {
+            tokenDenylist.deny(
+                    jwtTokenProvider.getJti(accessToken),
+                    jwtTokenProvider.getRemainingSeconds(accessToken)
+            );
+
+            log.info("Denied Token: {}", tokenDenylist.isDenied(jwtTokenProvider.getJti(accessToken)));
+        }
+
+//        refreshTokenRepository.findByToken(refreshToken)
+//            .ifPresent(refreshTokenRepository::delete);
     }
 
     @Transactional
     public String issueRefreshToken(Long userId) {
         String token = UUID.randomUUID().toString();
+        refreshTokenStore.save(userId, token, refreshTokenValiditySeconds);
 
-        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
-        refreshTokenRepository.findByUserId(userId)
-            .ifPresentOrElse(
-                exist -> exist.update(token, expiresAt),
-                ()-> refreshTokenRepository.save(new RefreshToken(userId, token, expiresAt)));
+//        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
+//        refreshTokenRepository.findByUserId(userId)
+//            .ifPresentOrElse(
+//                exist -> exist.update(token, expiresAt),
+//                ()-> refreshTokenRepository.save(new RefreshToken(userId, token, expiresAt)));
 
         return token;
     }
@@ -134,12 +150,13 @@ public class AuthService {
     @Transactional
     public TokenPair issueRefreshTokenPair(Long userId) {
         String token = UUID.randomUUID().toString();
+        refreshTokenStore.save(userId, token, refreshTokenValiditySeconds);
 
-        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
-        refreshTokenRepository.findByUserId(userId)
-                .ifPresentOrElse(
-                        exist -> exist.update(token, expiresAt),
-                        ()-> refreshTokenRepository.save(new RefreshToken(userId, token, expiresAt)));
+//        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(refreshTokenValiditySeconds);
+//        refreshTokenRepository.findByUserId(userId)
+//                .ifPresentOrElse(
+//                        exist -> exist.update(token, expiresAt),
+//                        ()-> refreshTokenRepository.save(new RefreshToken(userId, token, expiresAt)));
 
         TokenPair tokenPair = new TokenPair();
         tokenPair.setToken(token);
@@ -150,15 +167,17 @@ public class AuthService {
 
     @Transactional
     public TokenResponse reissueToken(String refreshToken) {
-        RefreshToken saved = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(()->new UnauthorizedException(LOGIN_REQUIRED));
+//        RefreshToken saved = refreshTokenRepository.findByToken(refreshToken)
+//                .orElseThrow(()->new UnauthorizedException(LOGIN_REQUIRED));
+//
+//        if (saved.isExpired()) {
+//            refreshTokenRepository.deleteByToken(refreshToken);
+//            throw new UnauthorizedException(LOGIN_REQUIRED);
+//        }
+        Long userId = refreshTokenStore.findUserId(refreshToken)
+                .orElseThrow(()->new UnauthorizedException(INVALID_REFRESH_TOKEN));
 
-        if (saved.isExpired()) {
-            refreshTokenRepository.deleteByToken(refreshToken);
-            throw new UnauthorizedException(LOGIN_REQUIRED);
-        }
-
-        User user = userRepository.findById(saved.getUserId())
+        User user = userRepository.findById(userId)
             .orElseThrow(()-> new UnauthorizedException(LOGIN_REQUIRED));
 
         String newAccessToken = jwtTokenProvider.createToken(user.getEmail());

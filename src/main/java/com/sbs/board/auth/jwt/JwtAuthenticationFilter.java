@@ -1,6 +1,7 @@
 package com.sbs.board.auth.jwt;
 
 import com.sbs.board.auth.CustomUserDetailService;
+import com.sbs.board.auth.RedisTokenDenylist;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailService userDetailService;
+    private final RedisTokenDenylist tokenDenylist;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -37,8 +39,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
 
-        if (token!=null && jwtTokenProvider.validateToken(token)) {
-
+        if (token!=null && jwtTokenProvider.validateToken(token) &&
+            !tokenDenylist.isDenied(jwtTokenProvider.getJti(token))) {
+            // 정상 유저
             String userEmail = jwtTokenProvider.getUserEmail(token);
             UserDetails userDetails = userDetailService.loadUserByUsername(userEmail);
             UsernamePasswordAuthenticationToken authToken =
