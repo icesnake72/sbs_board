@@ -2,6 +2,8 @@ server:
   # 컨테이너 내부 포트. 리버스 프록시(nginx:80) 뒤에 있으며 외부에 노출하지 않는다.
   port: 8090
 
+  # CA(인증기관): DigiCert, Let's Encrypt
+
   # 프록시가 넘긴 X-Forwarded-* 를 Spring 이 신뢰하도록 한다.
   # 이게 없으면 request.getScheme() 이 항상 http 라, HTTPS 종단 뒤에서 링크/리다이렉트가 http 로 새어나간다.
   forward-headers-strategy: framework
